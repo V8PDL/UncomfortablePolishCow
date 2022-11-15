@@ -1,0 +1,229 @@
+﻿<Window x:Class="UncomfortablePolishCow.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UncomfortablePolishCow"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <DataGrid
+            Name="ParsedExpressionGrid" 
+            HorizontalAlignment="Stretch" 
+            Width="50" Margin="10,90,95,0"
+            VerticalAlignment="Top"
+            HeadersVisibility="None"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            CanUserDeleteRows="False"
+            CanUserResizeColumns="False"
+            CanUserSortColumns="False">
+            <DataGrid.LayoutTransform>
+                <TransformGroup>
+                    <RotateTransform Angle="90"/>
+                    <MatrixTransform Matrix="-1,0,0,1,0,0"/>
+                </TransformGroup>
+            </DataGrid.LayoutTransform>
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Path=Value}"/>
+            </DataGrid.Columns>
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="{x:Type DataGridColumnHeader}"
+                BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.CellStyle>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Height" Value="50"/>
+                </Style>
+            </DataGrid.RowStyle>
+        </DataGrid>
+        <DataGrid
+            Name="StackGrid" 
+            HorizontalAlignment="Stretch" 
+            Width="50" Margin="10,170,95,0"
+            VerticalAlignment="Top"
+            HeadersVisibility="None"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            CanUserDeleteRows="False"
+            CanUserResizeColumns="False"
+            CanUserSortColumns="False">
+            <DataGrid.LayoutTransform>
+                <TransformGroup>
+                    <RotateTransform Angle="90"/>
+                    <MatrixTransform Matrix="-1,0,0,1,0,0"/>
+                </TransformGroup>
+            </DataGrid.LayoutTransform>
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Path=Value}"/>
+            </DataGrid.Columns>
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="{x:Type DataGridColumnHeader}"
+                BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.CellStyle>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Height" Value="50"/>
+                </Style>
+            </DataGrid.RowStyle>
+        </DataGrid>
+        <DataGrid
+            Name="OutputGrid" 
+            HorizontalAlignment="Stretch" 
+            Width="50" Margin="10,250,95,0"
+            VerticalAlignment="Top"
+            HeadersVisibility="None"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            CanUserDeleteRows="False"
+            CanUserResizeColumns="False"
+            CanUserSortColumns="False">
+            <DataGrid.LayoutTransform>
+                <TransformGroup>
+                    <RotateTransform Angle="90"/>
+                    <MatrixTransform Matrix="-1,0,0,1,0,0"/>
+                </TransformGroup>
+            </DataGrid.LayoutTransform>
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Path=Value}"/>
+            </DataGrid.Columns>
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="{x:Type DataGridColumnHeader}"
+                BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.CellStyle>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Height" Value="50"/>
+                </Style>
+            </DataGrid.RowStyle>
+        </DataGrid>
+        <DataGrid
+            Name="ResultGrid" 
+            HorizontalAlignment="Stretch" 
+            Width="50" Margin="10,330,95,0"
+            VerticalAlignment="Top"
+            HeadersVisibility="None"
+            AutoGenerateColumns="False"
+            CanUserAddRows="False"
+            CanUserDeleteRows="False"
+            CanUserResizeColumns="False"
+            CanUserSortColumns="False">
+            <DataGrid.LayoutTransform>
+                <TransformGroup>
+                    <RotateTransform Angle="90"/>
+                    <MatrixTransform Matrix="-1,0,0,1,0,0"/>
+                </TransformGroup>
+            </DataGrid.LayoutTransform>
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Path=Value}"/>
+            </DataGrid.Columns>
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="{x:Type DataGridColumnHeader}"
+                BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="LayoutTransform">
+                        <Setter.Value>
+                            <TransformGroup>
+                                <RotateTransform Angle="-90"/>
+                                <ScaleTransform ScaleX="1" ScaleY="-1" />
+                            </TransformGroup>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.CellStyle>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Height" Value="50"/>
+                </Style>
+            </DataGrid.RowStyle>
+        </DataGrid>
+        <TextBox x:Name="ExpressionTextBox" HorizontalAlignment="Stretch" ToolTip="Enter expression" Height="25" Margin="10,10,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
+        <Label Content="Parsed expression" HorizontalAlignment="Left" Margin="10,62,0,0" VerticalAlignment="Top"/>
+        <Label Content="Stack" HorizontalAlignment="Left" Margin="10,143,0,0" VerticalAlignment="Top"/>
+        <Label Content="Ouput expression" HorizontalAlignment="Left" Margin="10,224,0,0" VerticalAlignment="Top"/>
+        <Label Content="Result" HorizontalAlignment="Left" Margin="10,304,0,0" VerticalAlignment="Top"/>
+        <Button Content="Parse" Click="ParseButton_Click" x:Name="ParseButton" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Start" Click="StartButton_Click" x:Name="StartButton" HorizontalAlignment="Left" Margin="90,40,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Stop" Click="StopButton_Click" x:Name="StopButton" HorizontalAlignment="Left" Margin="170,40,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Copy" Click="CopyExpressionButton_Click" x:Name="CopyExpressionButton" HorizontalAlignment="Right" Margin="0,105,10,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Copy" Click="CopyStackButton_Click" x:Name="CopyStackButton" HorizontalAlignment="Right" Margin="0,185,10,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Copy" Click="CopyOutputExpressionButton_Click" x:Name="CopyOutputExpressionButton" HorizontalAlignment="Right" Margin="0,265,10,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Copy" Click="CopyResultButton_Click" x:Name="CopyResultButton" HorizontalAlignment="Right" Margin="0,345,10,0" VerticalAlignment="Top" Width="75"/>
+        <Slider x:Name="SpeedSlider" HorizontalAlignment="Stretch" Minimum="0.05" Maximum="1" Margin="250,65,10,0" VerticalAlignment="Top"/>
+        <TextBlock x:Name="SpeedTextBlock" HorizontalAlignment="Left" Margin="250,44,0,0" TextWrapping="Wrap" Text="Speed: seconds per move" VerticalAlignment="Top"/>
+    </Grid>
+</Window>
