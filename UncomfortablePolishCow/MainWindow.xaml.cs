@@ -12,87 +12,245 @@ namespace UncomfortablePolishCow
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Dictionary<string, int> operatorsPriority = new Dictionary<string, int>()
+        #region Fields
+
+        private CalculationState? currentState = null;
+        private bool isRunning = false;
+
+        private readonly Stack<Cell> stack = new();
+        private readonly Queue<Cell> inputExpression = new();
+        private readonly Queue<Cell> outputExpression = new();
+        private readonly Stack<Cell> resultExpression = new();
+
+        private readonly Dictionary<string, (int, Func<Cell, Cell, Cell>)> operators = new()
         {
-            ["("] = -1,
-            [")"] = 0,
-            ["-"] = 1,
-            ["+"] = 1,
-            ["*"] = 2,
-            ["/"] = 2,
-            ["^"] = 3,
+            ["("] = (-1, null),
+            [")"] = (0, null),
+            ["-"] = (1, (cell1, cell2) => new Cell((int.Parse(cell1.Value) - int.Parse(cell2.Value)).ToString())),
+            ["+"] = (1, (cell1, cell2) => new Cell((int.Parse(cell1.Value) + int.Parse(cell2.Value)).ToString())),
+            ["*"] = (2, (cell1, cell2) => new Cell((int.Parse(cell1.Value) * int.Parse(cell2.Value)).ToString())),
+            ["/"] = (2, (cell1, cell2) => new Cell((int.Parse(cell1.Value) / int.Parse(cell2.Value)).ToString())),
+            ["^"] = (3, (cell1, cell2) => new Cell((Math.Pow(int.Parse(cell1.Value), int.Parse(cell2.Value))).ToString()))
         };
 
-        private Dictionary<string, Func<Cell, Cell, Cell>> operatorsFuncs = new Dictionary<string, Func<Cell, Cell, Cell>>()
-        {
-            ["-"] = (cell1, cell2) => new Cell((int.Parse(cell1.Value) - int.Parse(cell2.Value)).ToString()),
-            ["+"] = (cell1, cell2) => new Cell((int.Parse(cell1.Value) + int.Parse(cell2.Value)).ToString()),
-            ["*"] = (cell1, cell2) => new Cell((int.Parse(cell1.Value) * int.Parse(cell2.Value)).ToString()),
-            ["/"] = (cell1, cell2) => new Cell((int.Parse(cell1.Value) / int.Parse(cell2.Value)).ToString()),
-            ["^"] = (cell1, cell2) => new Cell((Math.Pow(int.Parse(cell1.Value), int.Parse(cell2.Value))).ToString())
-        };
+        private Thread calculatingThread;
 
-        public enum SymbolTypes
-        {
-            Number,
-            Operator,
-            ParenthesisOpen,
-            PrenthesisClose
-        }
+        private GraphWindow graphWindow = null;
 
-        private Thread RunThread;
+        #endregion
 
-        public class Cell
-        {
-            public string Value { get; set; }
-            public SymbolTypes Type { get; set; }
-            public Cell() => Value = string.Empty;
-            public Cell(string val) => Value = val;
-            public Cell(char val) => Value = val.ToString();
-            public Cell(string val, SymbolTypes type)
-            {
-                this.Value = val;
-                this.Type = type;
-            }
-            public Cell(char val, SymbolTypes type)
-            {
-                this.Value = val.ToString();
-                this.Type = type;
-            }
-        }
-
-        private bool IsRunning = false;
-
-        private Stack<Cell> Stack = new Stack<Cell>();
-        private Queue<Cell> InputExpression = new Queue<Cell>();
-        private Queue<Cell> OutputExpression = new Queue<Cell>();
-        private Stack<Cell> ResultExpression = new Stack<Cell>();
-
-        private static string expression = string.Empty;
+        #region Constructors
 
         public MainWindow()
         {
             InitializeComponent();
             SpeedSlider.ValueChanged += this.Slider_ValueChanged;
             SpeedSlider.Value = 0.4;
+            this.PauseButton.IsEnabled = false;
+            this.StopButton.IsEnabled = false;
+            this.ContinueButton.IsEnabled = false;
         }
+
+        #endregion
+
+        #region GuiHandlers
 
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(expression))
+            this.ParseExpression(this.ExpressionTextBox.Text);
+            if (this.calculatingThread != null && (calculatingThread.IsAlive || this.calculatingThread.ThreadState == ThreadState.Running))
             {
-                this.ParseExpression(expression = this.ExpressionTextBox.Text);
+                this.calculatingThread.Abort();
             }
-            if (this.RunThread != null && (RunThread.IsAlive || this.RunThread.ThreadState == ThreadState.Running))
-            {
-                this.RunThread.Abort();
-            }
-            this.ChangeEnability();
-            this.RunThread = new Thread(Go);
-            this.RunThread.Start();
+            this.ContinueButton_Click(sender, e);
         }
 
-        private void ParseButton_Click(object sender, RoutedEventArgs e) => ParseExpression(expression = this.ExpressionTextBox.Text);
+        private void ParseButton_Click(object sender, RoutedEventArgs e) => ParseExpression(this.ExpressionTextBox.Text);
+
+        private void StopButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.ChangeIsRunning();
+            if (this.calculatingThread != null && (this.calculatingThread.IsAlive || this.calculatingThread.ThreadState == ThreadState.Running))
+            {
+                this.calculatingThread.Abort();
+
+            }
+        }
+
+        private void StopButton_Copy_Click(object sender, RoutedEventArgs e)
+        {
+            this.ChangeIsRunning();
+            this.currentState = null;
+        }
+
+        private void PauseButton_Click(object sender, RoutedEventArgs e) => this.ChangeIsRunning();
+
+        private void ContinueButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.ChangeIsRunning();
+            this.calculatingThread = new Thread(Calculate);
+            this.calculatingThread.Start();
+        }
+
+        private void CopyButton_Click(object sender, RoutedEventArgs e)
+            => _ = true switch
+            {
+                true when sender == this.CopyExpressionButton => new Func<int>(() => { Clipboard.SetText(string.Join(" ", this.inputExpression.Select(c => c.Value))); return 0; }).Invoke(),
+                true when sender == this.CopyStackButton => new Func<int>(() => { Clipboard.SetText(string.Join(" ", this.stack.Reverse().Select(c => c.Value))); return 0; }).Invoke(),
+                true when sender == this.CopyOutputExpressionButton => new Func<int>(() => { Clipboard.SetText(string.Join(" ", this.outputExpression.Select(c => c.Value))); return 0; }).Invoke(),
+                true when sender == this.CopyResultButton => new Func<int>(() => { Clipboard.SetText(string.Join(" ", this.resultExpression.Reverse().Select(c => c.Value))); return 0; }).Invoke(),
+                _ => 0
+            };
+
+        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) => SpeedTextBlock.Text = $"Speed: {e.NewValue:0.000} seconds per move";
+
+        #endregion
+
+        #region Private methods
+
+        private void ChangeIsRunning()
+        {
+            this.isRunning = !this.isRunning;
+            this.ParseButton.IsEnabled = !this.isRunning;
+            this.StartButton.IsEnabled = !this.isRunning;
+            this.StopButton.IsEnabled = this.isRunning;
+            this.ShowGraphCheckbox.IsEnabled = !this.isRunning;
+            this.PauseButton.IsEnabled = this.isRunning;
+            this.ContinueButton.IsEnabled = !this.isRunning && this.currentState != null;
+        }
+
+        private void Calculate()
+        {
+            int millisecondsPerMove = 0;
+            if (this.currentState is null)
+            {
+                this.Dispatcher.Invoke(() => this.OutputGrid.Items.Clear());
+                this.Dispatcher.Invoke(() => this.StackGrid.Items.Clear());
+                this.Dispatcher.Invoke(() => this.ResultGrid.Items.Clear());
+                this.isRunning = true;
+                this.currentState = CalculationState.MoveToStack;
+            }
+
+            while (this.inputExpression.Any() && this.currentState == CalculationState.MoveToStack)
+            {
+                if (!this.isRunning)
+                {
+                    return;
+                }
+
+                this.Dispatcher.Invoke(() => millisecondsPerMove = (int)(this.SpeedSlider.Value * 1000));
+                var cell = this.inputExpression.Dequeue();
+                switch (cell.Type)
+                {
+                    case SymbolTypes.Number:
+                        this.AddToGui(this.outputExpression, this.OutputGrid, cell);
+                        break;
+                    case SymbolTypes.Operator:
+                        if (!this.stack.Any() || operators[cell.Value].Item1 > operators[this.stack.Peek().Value].Item1)
+                        {
+                            this.AddToGui(this.stack, this.StackGrid, cell);
+                        }
+                        else
+                        {
+                            this.AddToGui(this.outputExpression, this.OutputGrid, this.RemoveFromGui(this.stack, this.StackGrid));
+                            this.AddToGui(this.stack, this.StackGrid, cell);
+                        }
+                        break;
+                    case SymbolTypes.BracketOpen:
+                        this.AddToGui(this.stack, this.StackGrid, cell);
+                        break;
+                    case SymbolTypes.BracketClose:
+                        while (this.stack.Peek().Type != SymbolTypes.BracketOpen)
+                        {
+                            this.AddToGui(this.outputExpression, this.OutputGrid, this.RemoveFromGui(this.stack, this.StackGrid));
+                        }
+                        this.RemoveFromGui(this.stack, this.StackGrid);
+                        break;
+                }
+                Thread.Sleep(millisecondsPerMove);
+            }
+
+            if (this.currentState == CalculationState.MoveToStack)
+            {
+                this.currentState = CalculationState.GetExpression;
+            }
+
+            while (this.stack.Any() && this.currentState == CalculationState.GetExpression)
+            {
+                if (!this.isRunning)
+                {
+                    return;
+                }
+
+                this.Dispatcher.Invoke(() => millisecondsPerMove = (int)(this.SpeedSlider.Value * 1000));
+                this.AddToGui(this.outputExpression, this.OutputGrid, this.RemoveFromGui(this.stack, this.StackGrid));
+                Thread.Sleep(millisecondsPerMove);
+            }
+
+            if (this.currentState == CalculationState.GetExpression)
+            {
+                this.Dispatcher.Invoke(() => MessageBox.Show($"Output expression is {string.Join(" ", this.outputExpression.Select(c => c.Value))}; starting counting result"));
+                this.currentState = CalculationState.MathematicalOperations;
+            }
+
+            if (this.Dispatcher.Invoke(() => this.ShowGraphCheckbox.IsChecked == true))
+            {
+                this.Dispatcher.Invoke(() =>
+                {
+                    this.graphWindow ??= new GraphWindow();
+                    graphWindow.Show();
+                    graphWindow.CreateGraph(new(this.outputExpression));
+               });
+            }
+
+            while (this.outputExpression.Any() && this.currentState == CalculationState.MathematicalOperations)
+            {
+                if (!this.isRunning)
+                {
+                    return;
+                }
+                this.Dispatcher.Invoke(() => millisecondsPerMove = (int)(this.SpeedSlider.Value * 1000));
+                var cell = this.outputExpression.Dequeue();
+                switch (cell.Type)
+                {
+                    case SymbolTypes.Number:
+                        this.AddToGui(this.resultExpression, this.ResultGrid, cell);
+                        break;
+                    case SymbolTypes.Operator:
+                        if (this.resultExpression.Count > 1)
+                        {
+                            var cell2 = this.RemoveFromGui(this.resultExpression, this.ResultGrid);
+                            var cell1 = this.RemoveFromGui(this.resultExpression, this.ResultGrid);
+                            this.AddToGui(this.resultExpression, this.ResultGrid, operators[cell.Value].Item2(cell1, cell2));
+                        }
+                        else
+                        {
+                            this.Dispatcher.Invoke(() => { MessageBox.Show("Not enough operands."); this.ChangeIsRunning(); });
+                            this.currentState = null;
+                            return;
+                        }
+                        break;
+                    case SymbolTypes.BracketOpen:
+                    case SymbolTypes.BracketClose:
+                        this.Dispatcher.Invoke(() => { MessageBox.Show("Parenthesis in output: something wrong."); this.ChangeIsRunning(); });
+                        return;
+                }
+                Thread.Sleep(millisecondsPerMove);
+            }
+
+            this.Dispatcher.Invoke(() => this.ChangeIsRunning());
+
+            if (this.resultExpression.Count == 1)
+            {
+                this.Dispatcher.Invoke(() => MessageBox.Show($"Result is {this.resultExpression.Peek().Value}"));
+            }
+            else
+            {
+                this.Dispatcher.Invoke(() => MessageBox.Show("More then one value in result expression, error occurred."));
+            }
+
+            this.currentState = null;
+        }
 
         private bool ParseExpression(string currentExpression)
         {
@@ -105,6 +263,7 @@ namespace UncomfortablePolishCow
             int parenthesisCounter = 0;
             bool operatorNextIsForbidden = true;
             this.ParsedExpressionGrid.Items.Clear();
+            this.inputExpression.Clear();
             foreach (var symbol in currentExpression)
             {
                 if (char.IsWhiteSpace(symbol))
@@ -120,25 +279,25 @@ namespace UncomfortablePolishCow
 
                 if (currentValue.Length != 0)
                 {
-                    this.AddToGui(this.InputExpression, this.ParsedExpressionGrid, new Cell(currentValue, SymbolTypes.Number));
+                    this.AddToGui(this.inputExpression, this.ParsedExpressionGrid, new Cell(currentValue, SymbolTypes.Number));
                     currentValue = string.Empty;
                 }
-                if (operatorsPriority.ContainsKey(symbol.ToString()))
+                if (operators.ContainsKey(symbol.ToString()))
                 {
-                    var (parenthesisKind, symbolType) = symbol == '(' ? (1, SymbolTypes.ParenthesisOpen) : symbol == ')' ? (-1, SymbolTypes.PrenthesisClose) : (0, SymbolTypes.Operator);
+                    var (parenthesisKind, symbolType) = symbol == '(' ? (1, SymbolTypes.BracketOpen) : symbol == ')' ? (-1, SymbolTypes.BracketClose) : (0, SymbolTypes.Operator);
                     parenthesisCounter += parenthesisKind;
                     if (parenthesisCounter < 0)
                     {
                         MessageBox.Show("Wrong parenthesis.");
                         return false;
                     }
-                    if (operatorNextIsForbidden && symbolType != SymbolTypes.ParenthesisOpen && this.InputExpression.Last().Type != SymbolTypes.PrenthesisClose)
+                    if (operatorNextIsForbidden && symbolType != SymbolTypes.BracketOpen && this.inputExpression.Last().Type != SymbolTypes.BracketClose)
                     {
                         MessageBox.Show("Two operators should be separated by operand in infix notation.");
                         return false;
                     }
-                    this.AddToGui(this.InputExpression, this.ParsedExpressionGrid, new Cell(symbol, symbolType));
-                    operatorNextIsForbidden = true;
+                    this.AddToGui(this.inputExpression, this.ParsedExpressionGrid, new Cell(symbol, symbolType));
+                    operatorNextIsForbidden = symbol != ')';
                 }
                 else
                 {
@@ -148,7 +307,7 @@ namespace UncomfortablePolishCow
             }
             if (currentValue.Length != 0)
             {
-                this.AddToGui(this.InputExpression, this.ParsedExpressionGrid, new Cell(currentValue, SymbolTypes.Number));
+                this.AddToGui(this.inputExpression, this.ParsedExpressionGrid, new Cell(currentValue, SymbolTypes.Number));
                 operatorNextIsForbidden = false;
             }
             if (operatorNextIsForbidden)
@@ -159,143 +318,18 @@ namespace UncomfortablePolishCow
             return true;
         }
 
-        private void StopButton_Click(object sender, RoutedEventArgs e)
+        private void AddToGui(IEnumerable<Cell> collection, DataGrid grid, Cell cell)
         {
-            this.ChangeEnability();
-            if (this.RunThread != null && (this.RunThread.IsAlive || this.RunThread.ThreadState == ThreadState.Running))
-            {
-                this.RunThread.Abort();
-                
-            }
-        }
-
-        private void CopyExpressionButton_Click(object sender, RoutedEventArgs e) => Clipboard.SetText(string.Join(" ", this.InputExpression.Select(c => c.Value)));
-
-        private void CopyStackButton_Click(object sender, RoutedEventArgs e) => Clipboard.SetText(string.Join(" ", this.Stack.Reverse().Select(c => c.Value)));
-
-        private void CopyOutputExpressionButton_Click(object sender, RoutedEventArgs e) => Clipboard.SetText(string.Join(" ", this.OutputExpression.Select(c => c.Value)));
-
-        private void CopyResultButton_Click(object sender, RoutedEventArgs e) => Clipboard.SetText(string.Join(" ", this.ResultExpression.Reverse().Select(c => c.Value)));
-
-        private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) => SpeedTextBlock.Text = $"Speed: {e.NewValue:0.000} seconds per move";
-
-        private void ChangeEnability()
-        {
-            this.IsRunning = !this.IsRunning;
-            this.ParseButton.IsEnabled = !this.IsRunning;
-            this.StartButton.IsEnabled = !this.IsRunning;
-            this.StopButton.IsEnabled = this.IsRunning;
-        }
-
-        private void Go()
-        {
-            int millisecondsPerMove = 0;
-            this.Dispatcher.Invoke(() => this.OutputGrid.Items.Clear());
-            this.Dispatcher.Invoke(() => this.StackGrid.Items.Clear());
-            this.Dispatcher.Invoke(() => this.ResultGrid.Items.Clear());
-            while (this.InputExpression.Any())
-            {
-                this.Dispatcher.Invoke(() => millisecondsPerMove = (int)(this.SpeedSlider.Value * 1000));
-                var cell = this.InputExpression.Dequeue();
-                switch (cell.Type)
-                {
-                    case SymbolTypes.Number:
-                        this.AddToGui(this.OutputExpression, this.OutputGrid, cell);
-                        break;
-                    case SymbolTypes.Operator:
-                        if (!this.Stack.Any() || operatorsPriority[cell.Value] > operatorsPriority[this.Stack.Peek().Value])
-                        {
-                            this.AddToGui(this.Stack, this.StackGrid, cell);
-                        }
-                        else
-                        {
-                            this.AddToGui(this.OutputExpression, this.OutputGrid, this.RemoveFromGui(this.Stack, this.StackGrid));
-                            this.AddToGui(this.Stack, this.StackGrid, cell);
-                        }
-                        break;
-                    case SymbolTypes.ParenthesisOpen:
-                        this.AddToGui(this.Stack, this.StackGrid, cell);
-                        break;
-                    case SymbolTypes.PrenthesisClose:
-                        while (this.Stack.Peek().Type != SymbolTypes.ParenthesisOpen)
-                        {
-                            this.AddToGui(this.OutputExpression, this.OutputGrid, this.RemoveFromGui(this.Stack, this.StackGrid));
-                        }
-                        this.RemoveFromGui(this.Stack, this.StackGrid);
-                        break;
-                }
-                Thread.Sleep(millisecondsPerMove);
-            }
-            while (this.Stack.Any())
-            {
-                this.Dispatcher.Invoke(() => millisecondsPerMove = (int)(this.SpeedSlider.Value * 1000));
-                this.AddToGui(this.OutputExpression, this.OutputGrid, this.RemoveFromGui(this.Stack, this.StackGrid));
-                Thread.Sleep(millisecondsPerMove);
-            }
-            this.Dispatcher.Invoke(() => MessageBox.Show($"Output expression is {string.Join(" ", this.OutputExpression.Select(c => c.Value))}; starting counting result"));
-
-            while (this.OutputExpression.Any())
-            {
-                this.Dispatcher.Invoke(() => millisecondsPerMove = (int)(this.SpeedSlider.Value * 1000));
-                var cell = this.OutputExpression.Dequeue();
-                switch (cell.Type)
-                {
-                    case SymbolTypes.Number:
-                        this.AddToGui(this.ResultExpression, this.ResultGrid, cell);
-                        break;
-                    case SymbolTypes.Operator:
-                        if (this.ResultExpression.Count > 1)
-                        {
-                            var cell2 = this.RemoveFromGui(this.ResultExpression, this.ResultGrid);
-                            var cell1 = this.RemoveFromGui(this.ResultExpression, this.ResultGrid);
-                            this.AddToGui(this.ResultExpression, this.ResultGrid, operatorsFuncs[cell.Value](cell1, cell2));
-                        }
-                        else
-                        {
-                            this.Dispatcher.Invoke(() => { MessageBox.Show("Not enough operands."); this.ChangeEnability(); });
-                            return;
-                        }
-                        break;
-                    case SymbolTypes.ParenthesisOpen:
-                    case SymbolTypes.PrenthesisClose:
-                        this.Dispatcher.Invoke(() => { MessageBox.Show("Parenthesis in output: something wrong."); this.ChangeEnability(); });
-                        return;
-                }
-                Thread.Sleep(millisecondsPerMove);
-            }
-            this.Dispatcher.Invoke(() => this.ChangeEnability());
-            if (this.ResultExpression.Count == 1)
-            {
-                this.Dispatcher.Invoke(() => MessageBox.Show($"Result is {this.ResultExpression.Peek().Value}"));
-            }
-            else
-            {
-                this.Dispatcher.Invoke(() => MessageBox.Show("More then one value in result expression, error occurred."));
-            }
-        }
-
-        private void AddToGui(Stack<Cell> stack, DataGrid grid, Cell cell)
-        {
-            stack.Push(cell);
+            _ = collection is Stack<Cell> stack ? new Func<int>(() => { stack.Push(cell); return 0; }).Invoke() : collection is Queue<Cell> queue ? new Func<int>(() => { queue.Enqueue(cell); return 0; }).Invoke() : 0;
             this.Dispatcher.Invoke(() => grid.Items.Add(new Cell(cell.Value)));
         }
 
-        private void AddToGui(Queue<Cell> queue, DataGrid grid, Cell cell)
+        private Cell RemoveFromGui(IEnumerable<Cell> collection, DataGrid grid)
         {
-            queue.Enqueue(cell);
-            this.Dispatcher.Invoke(() => grid.Items.Add(new Cell(cell.Value)));
+            this.Dispatcher.Invoke(() => grid.Items.RemoveAt(collection.Count() - 1));
+            return collection is Stack<Cell> stack ? stack.Pop() : collection is Queue<Cell> queue ? queue.Dequeue() : null;
         }
 
-        private Cell RemoveFromGui(Stack<Cell> stack, DataGrid grid)
-        {
-            this.Dispatcher.Invoke(() => grid.Items.RemoveAt(stack.Count - 1));
-            return stack.Pop();
-        }
-
-        private Cell RemoveFromGui(Queue<Cell> queue, DataGrid grid)
-        {
-            this.Dispatcher.Invoke(() => grid.Items.RemoveAt(queue.Count - 1));
-            return queue.Dequeue();
-        }
+        #endregion
     }
 }

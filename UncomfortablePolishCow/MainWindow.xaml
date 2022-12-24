@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:UncomfortablePolishCow"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="500" Width="800">
     <Grid>
         <DataGrid
             Name="ParsedExpressionGrid" 
             HorizontalAlignment="Stretch" 
-            Width="50" Margin="10,90,95,0"
+            Width="50" Margin="10,140,95,0"
             VerticalAlignment="Top"
             HeadersVisibility="None"
             AutoGenerateColumns="False"
@@ -61,7 +61,7 @@
         <DataGrid
             Name="StackGrid" 
             HorizontalAlignment="Stretch" 
-            Width="50" Margin="10,170,95,0"
+            Width="50" Margin="10,220,95,0"
             VerticalAlignment="Top"
             HeadersVisibility="None"
             AutoGenerateColumns="False"
@@ -112,7 +112,7 @@
         <DataGrid
             Name="OutputGrid" 
             HorizontalAlignment="Stretch" 
-            Width="50" Margin="10,250,95,0"
+            Width="50" Margin="10,300,95,0"
             VerticalAlignment="Top"
             HeadersVisibility="None"
             AutoGenerateColumns="False"
@@ -163,7 +163,7 @@
         <DataGrid
             Name="ResultGrid" 
             HorizontalAlignment="Stretch" 
-            Width="50" Margin="10,330,95,0"
+            Width="50" Margin="10,380,95,0"
             VerticalAlignment="Top"
             HeadersVisibility="None"
             AutoGenerateColumns="False"
@@ -212,18 +212,21 @@
             </DataGrid.RowStyle>
         </DataGrid>
         <TextBox x:Name="ExpressionTextBox" HorizontalAlignment="Stretch" ToolTip="Enter expression" Height="25" Margin="10,10,10,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top"/>
-        <Label Content="Parsed expression" HorizontalAlignment="Left" Margin="10,62,0,0" VerticalAlignment="Top"/>
-        <Label Content="Stack" HorizontalAlignment="Left" Margin="10,143,0,0" VerticalAlignment="Top"/>
-        <Label Content="Ouput expression" HorizontalAlignment="Left" Margin="10,224,0,0" VerticalAlignment="Top"/>
-        <Label Content="Result" HorizontalAlignment="Left" Margin="10,304,0,0" VerticalAlignment="Top"/>
+        <Label Content="Parsed expression" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top"/>
+        <Label Content="Stack" HorizontalAlignment="Left" Margin="10,190,0,0" VerticalAlignment="Top"/>
+        <Label Content="Ouput expression" HorizontalAlignment="Left" Margin="10,275,0,0" VerticalAlignment="Top"/>
+        <Label Content="Result" HorizontalAlignment="Left" Margin="10,355,0,0" VerticalAlignment="Top"/>
         <Button Content="Parse" Click="ParseButton_Click" x:Name="ParseButton" HorizontalAlignment="Left" Margin="10,40,0,0" VerticalAlignment="Top" Width="75"/>
         <Button Content="Start" Click="StartButton_Click" x:Name="StartButton" HorizontalAlignment="Left" Margin="90,40,0,0" VerticalAlignment="Top" Width="75"/>
-        <Button Content="Stop" Click="StopButton_Click" x:Name="StopButton" HorizontalAlignment="Left" Margin="170,40,0,0" VerticalAlignment="Top" Width="75"/>
-        <Button Content="Copy" Click="CopyExpressionButton_Click" x:Name="CopyExpressionButton" HorizontalAlignment="Right" Margin="0,105,10,0" VerticalAlignment="Top" Width="75"/>
-        <Button Content="Copy" Click="CopyStackButton_Click" x:Name="CopyStackButton" HorizontalAlignment="Right" Margin="0,185,10,0" VerticalAlignment="Top" Width="75"/>
-        <Button Content="Copy" Click="CopyOutputExpressionButton_Click" x:Name="CopyOutputExpressionButton" HorizontalAlignment="Right" Margin="0,265,10,0" VerticalAlignment="Top" Width="75"/>
-        <Button Content="Copy" Click="CopyResultButton_Click" x:Name="CopyResultButton" HorizontalAlignment="Right" Margin="0,345,10,0" VerticalAlignment="Top" Width="75"/>
-        <Slider x:Name="SpeedSlider" HorizontalAlignment="Stretch" Minimum="0.05" Maximum="1" Margin="250,65,10,0" VerticalAlignment="Top"/>
-        <TextBlock x:Name="SpeedTextBlock" HorizontalAlignment="Left" Margin="250,44,0,0" TextWrapping="Wrap" Text="Speed: seconds per move" VerticalAlignment="Top"/>
+        <Button Content="Stop" Click="StopButton_Click" x:Name="StopButton" HorizontalAlignment="Left" Margin="170,40,0,0" VerticalAlignment="Top" Width="75" />
+        <Button Content="Pause" Click="PauseButton_Click" x:Name="PauseButton" HorizontalAlignment="Left" Margin="250,40,0,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Continue" Click="ContinueButton_Click" x:Name="ContinueButton" HorizontalAlignment="Left" Margin="330,40,0,0" VerticalAlignment="Top" Width="75"/>
+        <CheckBox Content="Show graph" x:Name="ShowGraphCheckbox" HorizontalAlignment="Left" Margin="410,40,0,0" VerticalAlignment="Top" Height="20" VerticalContentAlignment="Center"/>
+        <Slider x:Name="SpeedSlider" HorizontalAlignment="Stretch" Minimum="0.05" Maximum="1" Margin="10,90,10,0" VerticalAlignment="Top"/>
+        <TextBlock x:Name="SpeedTextBlock" HorizontalAlignment="Left" Margin="10,70,0,0" TextWrapping="Wrap" Text="Speed: seconds per move" VerticalAlignment="Top"/>
+        <Button Content="Copy" Click="CopyButton_Click" x:Name="CopyExpressionButton" HorizontalAlignment="Right" Margin="0,155,10,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Copy" Click="CopyButton_Click" x:Name="CopyStackButton" HorizontalAlignment="Right" Margin="0,235,10,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Copy" Click="CopyButton_Click" x:Name="CopyOutputExpressionButton" HorizontalAlignment="Right" Margin="0,315,10,0" VerticalAlignment="Top" Width="75"/>
+        <Button Content="Copy" Click="CopyButton_Click" x:Name="CopyResultButton" HorizontalAlignment="Right" Margin="0,395,10,0" VerticalAlignment="Top" Width="75"/>
     </Grid>
 </Window>
